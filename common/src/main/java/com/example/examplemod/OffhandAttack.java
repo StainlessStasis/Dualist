@@ -1,5 +1,6 @@
 package com.example.examplemod;
 
+import com.example.examplemod.api.IOffhandEntity;
 import com.example.examplemod.mixin.LivingEntityAccessor;
 import com.example.examplemod.mixin.PlayerInvoker;
 import com.example.examplemod.network.OffhandAttackPacket;

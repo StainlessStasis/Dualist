@@ -1,6 +1,6 @@
 package com.example.examplemod.mixin;
 
-import com.example.examplemod.IOffhandEntity;
+import com.example.examplemod.api.IOffhandEntity;
 import com.example.examplemod.OffhandAttributeMath;
 import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.server.level.ServerChunkCache;
@@ -38,31 +38,24 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
 
         LivingEntity self = (LivingEntity) (Object) this;
 
-        if (!self.level().isClientSide()) {
-            if (!examplemod$isOffhandSwinging
-                    || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
-                    || examplemod$offhandSwingTime < 0) {
-                examplemod$offhandSwingTime = -1;
-                examplemod$isOffhandSwinging = true;
+        boolean canSwing = !examplemod$isOffhandSwinging
+                || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
+                || examplemod$offhandSwingTime < 0;
 
-                if (self.level() instanceof ServerLevel serverLevel) {
-                    ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, ClientboundAnimatePacket.SWING_OFF_HAND);
-                    ServerChunkCache chunkSource = serverLevel.getChunkSource();
-                    if (sendToSwingingEntity) {
-                        chunkSource.sendToTrackingPlayersAndSelf(self, packet);
-                    } else {
-                        chunkSource.sendToTrackingPlayers(self, packet);
-                    }
-                }
+
+        if (self.level() instanceof ServerLevel level && canSwing) {
+            ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, ClientboundAnimatePacket.SWING_OFF_HAND);
+            ServerChunkCache chunkSource = level.getChunkSource();
+            if (sendToSwingingEntity) {
+                chunkSource.sendToTrackingPlayersAndSelf(self, packet);
+            } else {
+                chunkSource.sendToTrackingPlayers(self, packet);
             }
             ci.cancel();
             return;
         }
 
-        // clientside - let vanilla run so the 3rd person model animates correctly
-        if (!examplemod$isOffhandSwinging
-                || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
-                || examplemod$offhandSwingTime < 0) {
+        if (canSwing) {
             examplemod$offhandSwingTime = -1;
             examplemod$isOffhandSwinging = true;
         }
@@ -71,6 +64,13 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Inject(method = "baseTick", at = @At("HEAD"))
     public void examplemod$baseTick(CallbackInfo ci) {
         examplemod$offhandAttackAnimOld = examplemod$offhandAttackAnim;
+    }
+
+    @Inject(method = "baseTick", at = @At("TAIL"))
+    public void examplemod$tickOffhandStrength(CallbackInfo ci) {
+        if (examplemod$offhandAttackStrengthTicker < Integer.MAX_VALUE) {
+            examplemod$offhandAttackStrengthTicker++;
+        }
     }
 
     @Inject(method = "updateSwingTime", at = @At("TAIL"))
@@ -88,13 +88,6 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         }
 
         examplemod$offhandAttackAnim = (float) examplemod$offhandSwingTime / (float) duration;
-    }
-
-    @Inject(method = "baseTick", at = @At("TAIL"))
-    public void examplemod$tickOffhandStrength(CallbackInfo ci) {
-        if (examplemod$offhandAttackStrengthTicker < Integer.MAX_VALUE) {
-            examplemod$offhandAttackStrengthTicker++;
-        }
     }
 
     @Inject(method = "getWeaponItem", at = @At("RETURN"), cancellable = true)

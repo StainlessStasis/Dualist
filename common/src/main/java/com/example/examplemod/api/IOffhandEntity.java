@@ -1,4 +1,4 @@
-package com.example.examplemod;
+package com.example.examplemod.api;
 
 public interface IOffhandEntity {
     float examplemod$getOffhandAttackAnim(float partialTick);

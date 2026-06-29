@@ -1,7 +1,6 @@
 package com.example.examplemod.mixin;
 
-import com.example.examplemod.IOffhandEntity;
-import com.google.common.base.MoreObjects;
+import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -14,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -23,21 +23,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
-
     @Shadow private ItemStack mainHandItem;
     @Shadow private ItemStack offHandItem;
     @Shadow private float mainHandHeight;
     @Shadow private float oMainHandHeight;
     @Shadow private float offHandHeight;
     @Shadow private float oOffHandHeight;
-
-    @Shadow
-    private ItemModelResolver itemModelResolver;
+    @Final @Shadow private ItemModelResolver itemModelResolver;
 
     @Invoker("submitArmWithItem")
     abstract void examplemod$invokeSubmitArmWithItem(
-            AbstractClientPlayer player, float frameInterp, float xRot, InteractionHand hand, float attack, ItemStack itemStack,
-            float inverseArmHeight, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords
+            AbstractClientPlayer player, float frameInterp, float xRot,
+            InteractionHand hand, float attack, ItemStack itemStack,
+            float inverseArmHeight, PoseStack poseStack,
+            SubmitNodeCollector submitNodeCollector, int lightCoords
     );
 
     @Inject(
@@ -51,49 +50,51 @@ public abstract class ItemInHandRendererMixin {
     ) {
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
 
-        if (!offhandEntity.examplemod$isOffhandSwinging()) {
-            return;
-        }
+        float mainHandAttack;
+        float offHandAttack;
 
-        float mainHandAttack = player.getAttackAnim(frameInterp);
-        float offHandAttack = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
+        boolean mainHandSwinging = player.swingingArm == InteractionHand.MAIN_HAND && player.swinging;
+        boolean offHandSwinging  = offhandEntity.examplemod$isOffhandSwinging();
 
-        InteractionHand vanillaAttackHand = MoreObjects.firstNonNull(player.swingingArm, InteractionHand.MAIN_HAND);
-        if (vanillaAttackHand == InteractionHand.OFF_HAND) {
-            mainHandAttack = 0.0F;
+        if (mainHandSwinging && offHandSwinging) {
+            mainHandAttack = player.getAttackAnim(frameInterp);
+            offHandAttack  = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
+        } else if (offHandSwinging) {
+            mainHandAttack = 0f;
+            offHandAttack  = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
+        } else {
+
+            mainHandAttack = (player.swingingArm == InteractionHand.MAIN_HAND || !player.swinging)
+                    ? player.getAttackAnim(frameInterp) : 0f;
+            offHandAttack = 0f;
         }
 
         boolean renderMainHand;
         boolean renderOffHand;
-        ItemStack liveMainHand = player.getMainHandItem();
+
+        ItemStack liveMain = player.getMainHandItem();
         ItemStack liveOffhand = player.getOffhandItem();
-        boolean holdsBow = liveMainHand.is(Items.BOW) || liveOffhand.is(Items.BOW);
-        boolean holdsCrossbow = liveMainHand.is(Items.CROSSBOW) || liveOffhand.is(Items.CROSSBOW);
+        boolean holdsBow = liveMain.is(Items.BOW) || liveOffhand.is(Items.BOW);
+        boolean holdsCrossbow = liveMain.is(Items.CROSSBOW) || liveOffhand.is(Items.CROSSBOW);
+
         if (!holdsBow && !holdsCrossbow) {
             renderMainHand = true;
-            renderOffHand = true;
+            renderOffHand  = true;
         } else if (player.isUsingItem()) {
-            ItemStack usedItemStack = player.getUseItem();
+            ItemStack usedItem = player.getUseItem();
             InteractionHand usedHand = player.getUsedItemHand();
-            if (!usedItemStack.is(Items.BOW) && !usedItemStack.is(Items.CROSSBOW)) {
-                boolean offhandChargedCrossbow = liveOffhand.is(Items.CROSSBOW)
-                        && CrossbowItem.isCharged(liveOffhand);
-                if (usedHand == InteractionHand.MAIN_HAND && offhandChargedCrossbow) {
-                    renderMainHand = true;
-                    renderOffHand = false;
-                } else {
-                    renderMainHand = true;
-                    renderOffHand = true;
-                }
+            if (!usedItem.is(Items.BOW) && !usedItem.is(Items.CROSSBOW)) {
+                boolean offhandCharged = liveOffhand.is(Items.CROSSBOW) && CrossbowItem.isCharged(liveOffhand);
+                renderMainHand = true;
+                renderOffHand = !(usedHand == InteractionHand.MAIN_HAND && offhandCharged);
             } else {
                 renderMainHand = usedHand == InteractionHand.MAIN_HAND;
                 renderOffHand = usedHand == InteractionHand.OFF_HAND;
             }
         } else {
-            boolean mainhandChargedCrossbow = liveMainHand.is(Items.CROSSBOW)
-                    && CrossbowItem.isCharged(liveMainHand);
+            boolean mainCharged = liveMain.is(Items.CROSSBOW) && CrossbowItem.isCharged(liveMain);
             renderMainHand = true;
-            renderOffHand = !mainhandChargedCrossbow;
+            renderOffHand = !mainCharged;
         }
 
         float xRot = player.getXRot(frameInterp);
@@ -106,8 +107,9 @@ public abstract class ItemInHandRendererMixin {
             float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oMainHandHeight, this.mainHandHeight));
             examplemod$invokeSubmitArmWithItem(
-                    player, frameInterp, xRot, InteractionHand.MAIN_HAND, mainHandAttack,
-                    mainHandItem, mainhandInverseArmHeight,
+                    player, frameInterp, xRot,
+                    InteractionHand.MAIN_HAND, mainHandAttack,
+                    this.mainHandItem, mainhandInverseArmHeight,
                     poseStack, submitNodeCollector, lightCoords
             );
         }
@@ -116,8 +118,9 @@ public abstract class ItemInHandRendererMixin {
             float offhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.offHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oOffHandHeight, this.offHandHeight));
             examplemod$invokeSubmitArmWithItem(
-                    player, frameInterp, xRot, InteractionHand.OFF_HAND, offHandAttack,
-                    offHandItem, offhandInverseArmHeight,
+                    player, frameInterp, xRot,
+                    InteractionHand.OFF_HAND, offHandAttack,
+                    this.offHandItem, offhandInverseArmHeight,
                     poseStack, submitNodeCollector, lightCoords
             );
         }

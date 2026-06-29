@@ -63,7 +63,6 @@ public class MinecraftMixin {
             }
         }
 
-        rightClickDelay = 4;
         player.swing(InteractionHand.OFF_HAND);
         Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss);
         ci.cancel();
