@@ -67,9 +67,8 @@ public class OffhandAttack {
         baseDamage *= invoker.examplemod$invokeBaseDamageScaleFactor();
         System.out.println("BASE DAMAGE: "+baseDamage);
 
-        player.onAttack();
-
         if (invoker.examplemod$invokeDeflectProjectile(target)) {
+            player.onAttack();
             return;
         }
 
@@ -128,6 +127,7 @@ public class OffhandAttack {
 
         offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
         player.postPiercingAttack();
+        player.onAttack();
     }
 
     private static void doOffhandSweepAttack(
@@ -167,7 +167,7 @@ public class OffhandAttack {
         double dz =  Mth.cos(player.getYRot() * (float)(Math.PI / 180.0));
         serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
                 player.getX() + dx, player.getY(0.5), player.getZ() + dz,
-                0, dx, 0.0, dz, 0.0);
+                0, dx, 0, dz, 0);
     }
 
 }

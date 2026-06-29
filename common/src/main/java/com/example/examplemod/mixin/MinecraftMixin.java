@@ -21,10 +21,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MinecraftMixin {
     @Shadow public LocalPlayer player;
     @Shadow public MultiPlayerGameMode gameMode;
-    @Shadow @Final public Options options;
-
-    @Shadow
-    private int rightClickDelay;
 
     @Inject(
             method = "handleKeybinds",
@@ -64,6 +60,7 @@ public class MinecraftMixin {
         }
 
         player.swing(InteractionHand.OFF_HAND);
+        player.resetOnlyAttackStrengthTicker();
         Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss);
         ci.cancel();
     }

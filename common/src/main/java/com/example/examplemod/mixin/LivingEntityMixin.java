@@ -5,6 +5,7 @@ import com.example.examplemod.OffhandAttributeMath;
 import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
@@ -23,8 +24,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityMixin implements IOffhandEntity {
     @Shadow protected abstract int getCurrentSwingDuration();
     @Shadow public abstract ItemStack getItemInHand(InteractionHand hand);
-    @Shadow public abstract AttributeMap getAttributes();
 
+    @Shadow protected int attackStrengthTicker;
     @Unique private boolean examplemod$isOffhandSwinging = false;
     @Unique private int examplemod$offhandSwingTime = 0;
     @Unique private float examplemod$offhandAttackAnim = 0;
@@ -146,6 +147,6 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         double attackSpeed = OffhandAttributeMath.resolveAttributes(player, Attributes.ATTACK_SPEED, offhand);
 
         float scale = ((float) examplemod$offhandAttackStrengthTicker + adjustTicks) / (float) (20 / attackSpeed);
-        return net.minecraft.util.Mth.clamp(scale, 0f, 1f);
+        return Mth.clamp(scale, 0f, 1f);
     }
 }

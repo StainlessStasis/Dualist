@@ -34,9 +34,6 @@ public interface PlayerInvoker {
     @Invoker("isSweepAttack")
     boolean examplemod$invokeIsSweepAttack(boolean fullStrengthAttack, boolean criticalAttack, boolean knockbackAttack);
 
-    @Invoker("doSweepAttack")
-    void examplemod$invokeDoSweepAttack(Entity entity, float baseDamage, DamageSource damageSource, float attackStrengthScale);
-
     @Invoker("attackVisualEffects")
     void examplemod$invokeAttackVisualEffects(
             Entity entity, boolean criticalAttack, boolean sweepAttack, boolean fullStrengthAttack, boolean unused, float magicBoost);
