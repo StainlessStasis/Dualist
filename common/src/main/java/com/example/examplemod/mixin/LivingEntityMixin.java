@@ -60,6 +60,7 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         if (canSwing) {
             examplemod$offhandSwingTime = -1;
             examplemod$isOffhandSwinging = true;
+//            System.out.println("CLIENT offhand swing started, isClientSide=" + self.level().isClientSide());
         }
         ci.cancel();
     }
@@ -79,6 +80,15 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Inject(method = "updateSwingTime", at = @At("TAIL"))
     protected void examplemod$updateSwingTime(CallbackInfo ci) {
         int duration = getCurrentSwingDuration();
+        LivingEntity self = ((LivingEntity) (Object) this);
+//        System.out.printf("mainSwing=%b mainTime=%d offSwing=%b offTime=%d duration=%d isClient=%b%n",
+//                self.swinging,
+//                self.swingTime,
+//                examplemod$isOffhandSwinging,
+//                examplemod$offhandSwingTime,
+//                duration,
+//                self.level().isClientSide()
+//        );
 
         if (examplemod$isOffhandSwinging) {
             examplemod$offhandSwingTime++;
@@ -121,17 +131,6 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     public boolean examplemod$isPerformingOffhandAttack() {
         return examplemod$isOffhandAttacking;
     }
-
-//    @Override
-//    public int examplemod$getOffhandAttackStrengthTicker() {
-//        return examplemod$offhandAttackStrengthTicker;
-//    }
-//
-//    @Override
-//    public void examplemod$setOffhandAttackStrengthTicker(int value) {
-//        examplemod$offhandAttackStrengthTicker = value;
-//    }
-
 
     public void examplemod$setAttackStrengthTicker(int attackStrengthTicker) {
         this.attackStrengthTicker = attackStrengthTicker;

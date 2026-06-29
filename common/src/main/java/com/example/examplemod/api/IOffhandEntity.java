@@ -9,8 +9,6 @@ public interface IOffhandEntity {
     void examplemod$setPerformingOffhandAttack(boolean value);
     boolean examplemod$isPerformingOffhandAttack();
 
-//    int examplemod$getOffhandAttackStrengthTicker();
-//    void examplemod$setOffhandAttackStrengthTicker(int value);
     void examplemod$setAttackStrengthTicker(int value);
     void examplemod$resetOffhandAttackStrengthTicker();
     float examplemod$getOffhandAttackStrengthScale(float adjustTicks);

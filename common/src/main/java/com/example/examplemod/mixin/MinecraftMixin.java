@@ -61,7 +61,6 @@ public class MinecraftMixin {
         }
 
         player.swing(InteractionHand.OFF_HAND);
-        System.out.println("ATTACK STRENGTH TICKER (Client): "+((LivingEntityAccessor)player).examplemod$getAttackStrengthTicker());
         Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss, ((LivingEntityAccessor)player).examplemod$getAttackStrengthTicker());
         ((IOffhandEntity)player).examplemod$resetOffhandAttackStrengthTicker();
         ci.cancel();

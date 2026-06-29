@@ -31,7 +31,6 @@ public class OffhandAttack {
 
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
         offhandEntity.examplemod$setAttackStrengthTicker(attackStrengthTicker);
-        System.out.println("ATTACK STRENGTH TICKER (Server): "+attackStrengthTicker);
 
         if (isMiss) {
             offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
@@ -51,7 +50,6 @@ public class OffhandAttack {
     }
 
     private static void attackWithOffhand(Player player, Entity target, IOffhandEntity offhandEntity, ItemStack offhand) {
-        System.out.println("ATTACK");
         PlayerInvoker invoker = (PlayerInvoker) player;
         LivingEntityAccessor accessor = (LivingEntityAccessor) player;
         if (invoker.examplemod$invokeCannotAttack(target)) {
@@ -67,7 +65,6 @@ public class OffhandAttack {
         float attackStrengthScale = offhandEntity.examplemod$getOffhandAttackStrengthScale(0.5F);
         float magicBoost = attackStrengthScale * (invoker.examplemod$invokeGetEnchantedDamage(target, baseDamage, damageSource) - baseDamage);
         baseDamage *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
-        System.out.println("BASE DAMAGE: "+baseDamage);
 
         if (invoker.examplemod$invokeDeflectProjectile(target)) {
             player.onAttack();
@@ -79,7 +76,6 @@ public class OffhandAttack {
             return;
         }
 
-        System.out.println("MAIN HAND ATTACK SCALE: "+player.getAttackStrengthScale(0.5f));
         boolean fullStrengthAttack = player.getAttackStrengthScale(0.5f) > 0.9F;
         boolean knockbackAttack;
         if (player.isSprinting() && fullStrengthAttack) {
@@ -96,7 +92,6 @@ public class OffhandAttack {
         }
 
         float totalDamage = baseDamage + magicBoost;
-        System.out.println("TOTAL DAMAGE: "+totalDamage);
         boolean sweepAttack = invoker.examplemod$invokeIsSweepAttack(fullStrengthAttack, criticalAttack, knockbackAttack);
 
         float oldLivingEntityHealth = 0.0F;
