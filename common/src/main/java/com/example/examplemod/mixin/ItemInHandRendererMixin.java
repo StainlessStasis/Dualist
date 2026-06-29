@@ -3,6 +3,7 @@ package com.example.examplemod.mixin;
 import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -44,7 +45,7 @@ public abstract class ItemInHandRendererMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void examplemod$submitBothHandsIndependently(
+    private void examplemod$submitHands(
             float frameInterp, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
             LocalPlayer player, int lightCoords, CallbackInfo ci
     ) {
@@ -63,7 +64,6 @@ public abstract class ItemInHandRendererMixin {
             mainHandAttack = 0f;
             offHandAttack  = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
         } else {
-
             mainHandAttack = (player.swingingArm == InteractionHand.MAIN_HAND || !player.swinging)
                     ? player.getAttackAnim(frameInterp) : 0f;
             offHandAttack = 0f;

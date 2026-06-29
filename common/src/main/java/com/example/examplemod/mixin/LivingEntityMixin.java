@@ -59,6 +59,7 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
             examplemod$offhandSwingTime = -1;
             examplemod$isOffhandSwinging = true;
         }
+        ci.cancel();
     }
 
     @Inject(method = "baseTick", at = @At("HEAD"))
