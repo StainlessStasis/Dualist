@@ -24,7 +24,7 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public void sendOffhandAttackPacket() {
-        ClientPacketDistributor.sendToServer(new OffhandAttackPacket());
+    public void sendOffhandAttackPacket(int entityID, boolean isMiss) {
+        ClientPacketDistributor.sendToServer(new OffhandAttackPacket(entityID, isMiss));
     }
 }

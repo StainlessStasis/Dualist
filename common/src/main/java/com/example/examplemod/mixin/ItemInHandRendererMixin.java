@@ -1,6 +1,6 @@
 package com.example.examplemod.mixin;
 
-import com.example.examplemod.mixin_api.IOffhandSwing;
+import com.example.examplemod.IOffhandEntity;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -53,7 +53,7 @@ public abstract class ItemInHandRendererMixin {
             original.call(instance, player, frameInterp, xRot, hand, mainAttack, handItem, mainInverseArmHeight,
                     poseStack, submitNodeCollector, lightCoords);
         } else {
-            float offAttack = ((IOffhandSwing) player).examplemod$getOffhandAttackAnim(frameInterp);
+            float offAttack = ((IOffhandEntity) player).examplemod$getOffhandAttackAnim(frameInterp);
             float offInverseArmHeight = 1.0F - Mth.lerp(frameInterp, oOffHandHeight, offHandHeight);
             original.call(instance, player, frameInterp, xRot, hand, offAttack, handItem, offInverseArmHeight,
                     poseStack, submitNodeCollector, lightCoords);

@@ -1,6 +1,6 @@
 package com.example.examplemod.mixin;
 
-import com.example.examplemod.mixin_api.IOffhandSwing;
+import com.example.examplemod.IOffhandEntity;
 import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -13,12 +13,17 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
-public abstract class LivingEntityMixin implements IOffhandSwing {
+public abstract class LivingEntityMixin implements IOffhandEntity {
     @Shadow protected abstract int getCurrentSwingDuration();
 
+    @Shadow
+    public abstract ItemStack getItemInHand(InteractionHand hand);
+
     @Unique private boolean examplemod$isOffhandSwinging = false;
+    @Unique private boolean examplemod$isOffhandAttacking = false;
     @Unique private int examplemod$offhandSwingTime = 0;
     @Unique private float examplemod$offhandAttackAnim = 0;
     @Unique private float examplemod$offhandAttackAnimOld = 0;
@@ -27,28 +32,36 @@ public abstract class LivingEntityMixin implements IOffhandSwing {
     public void examplemod$swing(InteractionHand hand, boolean sendToSwingingEntity, CallbackInfo ci) {
         if (hand == InteractionHand.MAIN_HAND) return;
 
-        LivingEntity entity = (LivingEntity)(Object)this;
+        LivingEntity self = (LivingEntity)(Object)this;
 
-        // trigger offhand swing if not already mid swing
+        if (!self.level().isClientSide()) {
+            if (!examplemod$isOffhandSwinging
+                    || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
+                    || examplemod$offhandSwingTime < 0) {
+                examplemod$offhandSwingTime = -1;
+                examplemod$isOffhandSwinging = true;
+
+                if (self.level() instanceof ServerLevel serverLevel) {
+                    ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, 3);
+                    ServerChunkCache chunkSource = serverLevel.getChunkSource();
+                    if (sendToSwingingEntity) {
+                        chunkSource.sendToTrackingPlayersAndSelf(self, packet);
+                    } else {
+                        chunkSource.sendToTrackingPlayers(self, packet);
+                    }
+                }
+            }
+            ci.cancel();
+            return;
+        }
+
+        // clientside - let vanilla run so the 3rd person model animates correctly
         if (!examplemod$isOffhandSwinging
                 || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
                 || examplemod$offhandSwingTime < 0) {
-
             examplemod$offhandSwingTime = -1;
             examplemod$isOffhandSwinging = true;
-
-            if (entity.level() instanceof ServerLevel serverLevel) {
-                ClientboundAnimatePacket packet = new ClientboundAnimatePacket(entity, ClientboundAnimatePacket.SWING_OFF_HAND);
-                ServerChunkCache chunkSource = serverLevel.getChunkSource();
-                if (sendToSwingingEntity) {
-                    chunkSource.sendToTrackingPlayersAndSelf(entity, packet);
-                } else {
-                    chunkSource.sendToTrackingPlayers(entity, packet);
-                }
-            }
         }
-
-        ci.cancel();
     }
 
     @Inject(method = "baseTick", at = @At("HEAD"))
@@ -73,10 +86,31 @@ public abstract class LivingEntityMixin implements IOffhandSwing {
         examplemod$offhandAttackAnim = (float) examplemod$offhandSwingTime / (float) duration;
     }
 
+    @Inject(
+            method = "getWeaponItem",
+            at = @At(
+                    value = "TAIL",
+                    target = "Lnet/minecraft/world/entity/player/Player;getWeaponItem()Lnet/minecraft/world/item/ItemStack;"
+            ),
+            cancellable = true)
+    private void examplemod$getWeaponItem(CallbackInfoReturnable<ItemStack> cir) {
+        System.out.println("GETTING WEAPON ITEM");
+        System.out.println("is offhand attacking: "+examplemod$isOffhandAttacking);
+        if (examplemod$isOffhandAttacking) {
+            System.out.println("OFFHAND ITEM: "+getItemInHand(InteractionHand.OFF_HAND));
+            cir.setReturnValue(getItemInHand(InteractionHand.OFF_HAND));
+        }
+    }
+
     @Override
     public float examplemod$getOffhandAttackAnim(float partialTick) {
         float delta = examplemod$offhandAttackAnim - examplemod$offhandAttackAnimOld;
         if (delta < 0.0F) delta++;
         return examplemod$offhandAttackAnimOld + delta * partialTick;
+    }
+
+    @Override
+    public void examplemod$setPerformingOffhandAttack(boolean value) {
+        examplemod$isOffhandAttacking = value;
     }
 }

@@ -21,7 +21,7 @@ public class ExampleMod {
                 OffhandAttackPacket.TYPE,
                 OffhandAttackPacket.STREAM_CODEC,
                 (payload, context) -> {
-                    context.enqueueWork(() -> OffhandAttack.perform(context.player()));
+                    context.enqueueWork(() -> OffhandAttack.perform(context.player(), payload.entityId(), payload.isMiss()));
                 }
         );
     }

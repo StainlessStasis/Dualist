@@ -33,5 +33,5 @@ public interface IPlatformHelper {
         return isDevelopmentEnvironment() ? "development" : "production";
     }
 
-    void sendOffhandAttackPacket();
+    void sendOffhandAttackPacket(int entityID, boolean isMiss);
 }

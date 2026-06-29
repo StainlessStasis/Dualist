@@ -23,7 +23,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public void sendOffhandAttackPacket() {
-        ClientPlayNetworking.send(new OffhandAttackPacket());
+    public void sendOffhandAttackPacket(int entityID, boolean isMiss) {
+        ClientPlayNetworking.send(new OffhandAttackPacket(entityID, isMiss));
     }
 }
