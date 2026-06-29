@@ -36,7 +36,6 @@ public class MinecraftMixin {
             cancellable = true
     )
     private void examplemod$handleOffhandAttack(CallbackInfo ci) {
-        System.out.println("startUseItem called, rightClickDelay=" + this.rightClickDelay);
         if (player == null || gameMode == null || gameMode.isSpectator() || player.isHandsBusy()) {
             return;
         }
@@ -53,10 +52,10 @@ public class MinecraftMixin {
 
         int entityID = OffhandAttackPacket.NO_ENTITY;
         boolean isMiss = false;
-        Minecraft mc = (Minecraft)(Object)this;
+        Minecraft mc = (Minecraft) (Object) this;
         if (mc.hitResult != null) {
             switch (mc.hitResult.getType()) {
-                case ENTITY -> entityID = ((EntityHitResult)mc.hitResult).getEntity().getId();
+                case ENTITY -> entityID = ((EntityHitResult) mc.hitResult).getEntity().getId();
                 case MISS -> isMiss = true;
                 case BLOCK -> {
                     return;
@@ -64,7 +63,6 @@ public class MinecraftMixin {
             }
         }
 
-        System.out.println("Cancelling startUseItem");
         rightClickDelay = 4;
         player.swing(InteractionHand.OFF_HAND);
         Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss);

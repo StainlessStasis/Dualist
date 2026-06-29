@@ -1,36 +1,32 @@
 package com.example.examplemod;
 
 import com.example.examplemod.mixin.LivingEntityAccessor;
+import com.example.examplemod.mixin.PlayerInvoker;
 import com.example.examplemod.network.OffhandAttackPacket;
-import com.mojang.datafixers.util.Pair;
-import net.minecraft.core.Holder;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-
-import java.util.ArrayList;
-import java.util.List;
+import net.minecraft.world.phys.Vec3;
 
 public class OffhandAttack {
     public static void perform(Player player, int entityID, boolean isMiss) {
         if (player.level().isClientSide()) return;
         if (player.isSpectator()) return;
-//        if (player.isUsingItem()) return;
 
         ItemStack offhand = player.getItemInHand(InteractionHand.OFF_HAND);
         if (offhand.isEmpty()) return;
         if (!offhand.isItemEnabled(player.level().enabledFeatures())) return;
         if (player.cannotAttackWithItem(offhand, 0)) return;
 
+        IOffhandEntity offhandEntity = (IOffhandEntity) player;
+
         if (isMiss) {
-            player.resetAttackStrengthTicker();
+            offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
             return;
         }
 
@@ -38,46 +34,93 @@ public class OffhandAttack {
         Entity target = player.level().getEntity(entityID);
         if (target == null) return;
 
-        List<Pair<Holder<Attribute>, AttributeModifier>> modifiersToApply = new ArrayList<>();
-        offhand.forEachModifier(EquipmentSlot.MAINHAND, (attr, modifier) -> {
-            modifiersToApply.add(Pair.of(attr, modifier));
-        });
-
-        for (Pair<Holder<Attribute>, AttributeModifier> pair : modifiersToApply) {
-            AttributeInstance instance = player.getAttributes().getInstance(pair.getFirst());
-            if (instance != null) {
-                instance.removeModifier(pair.getSecond().id());
-            }
-        }
-        for (Pair<Holder<Attribute>, AttributeModifier> pair : modifiersToApply) {
-            AttributeInstance instance = player.getAttributes().getInstance(pair.getFirst());
-            if (instance != null) {
-                instance.addTransientModifier(pair.getSecond());
-            }
-        }
-
-        player.resetAttackStrengthTicker();
-
-        ItemStack mainhand = player.getItemInHand(InteractionHand.MAIN_HAND);
-        player.setItemInHand(InteractionHand.MAIN_HAND, offhand);
-        player.setItemInHand(InteractionHand.OFF_HAND, mainhand);
-
-        IOffhandEntity offhandEntity = (IOffhandEntity)player;
         offhandEntity.examplemod$setPerformingOffhandAttack(true);
-        ((LivingEntityAccessor)player).examplemod$setAttackStrengthTicker(Integer.MAX_VALUE);
         try {
-            player.attack(target);
+            attackWithOffhand(player, target, offhandEntity, offhand);
         } finally {
             offhandEntity.examplemod$setPerformingOffhandAttack(false);
-            player.setItemInHand(InteractionHand.MAIN_HAND, mainhand);
-            player.setItemInHand(InteractionHand.OFF_HAND, offhand);
-
-            for (Pair<Holder<Attribute>, AttributeModifier> pair : modifiersToApply) {
-                AttributeInstance instance = player.getAttributes().getInstance(pair.getFirst());
-                if (instance != null) {
-                    instance.removeModifier(pair.getSecond().id());
-                }
-            }
         }
+    }
+
+    private static void attackWithOffhand(Player player, Entity target, IOffhandEntity offhandEntity, ItemStack offhandStack) {
+        System.out.println("ATTACK");
+        PlayerInvoker invoker = (PlayerInvoker) player;
+        LivingEntityAccessor accessor = (LivingEntityAccessor) player;
+        if (invoker.examplemod$invokeCannotAttack(target)) {
+            return;
+        }
+
+        boolean autoSpin = player.isAutoSpinAttack();
+        float baseDamage = autoSpin
+                ? (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE)
+                : (float) OffhandAttributeMath.resolveAttributes(player, Attributes.ATTACK_DAMAGE, offhandStack);
+
+        DamageSource damageSource = invoker.examplemod$invokeCreateAttackSource(offhandStack);
+        float attackStrengthScale = offhandEntity.examplemod$getOffhandAttackStrengthScale(0.5F);
+        float magicBoost = attackStrengthScale * (invoker.examplemod$invokeGetEnchantedDamage(target, baseDamage, damageSource) - baseDamage);
+        baseDamage *= invoker.examplemod$invokeBaseDamageScaleFactor();
+        System.out.println("BASE DAMAGE: "+baseDamage);
+
+        player.onAttack();
+
+        if (invoker.examplemod$invokeDeflectProjectile(target)) {
+            return;
+        }
+
+        if (baseDamage <= 0.0F && magicBoost <= 0.0F) {
+            player.postPiercingAttack();
+            return;
+        }
+
+        boolean fullStrengthAttack = attackStrengthScale > 0.9F;
+        boolean knockbackAttack;
+        if (player.isSprinting() && fullStrengthAttack) {
+            invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK);
+            knockbackAttack = true;
+        } else {
+            knockbackAttack = false;
+        }
+
+        baseDamage += offhandStack.getItem().getAttackDamageBonus(target, baseDamage, damageSource);
+        boolean criticalAttack = fullStrengthAttack && invoker.examplemod$invokeCanCriticalAttack(target);
+        if (criticalAttack) {
+            baseDamage *= 1.5F;
+        }
+
+        float totalDamage = baseDamage + magicBoost;
+        System.out.println("TOTAL DAMAGE: "+totalDamage);
+        boolean sweepAttack = invoker.examplemod$invokeIsSweepAttack(fullStrengthAttack, criticalAttack, knockbackAttack);
+
+        float oldLivingEntityHealth = 0.0F;
+        if (target instanceof LivingEntity livingTarget) {
+            oldLivingEntityHealth = livingTarget.getHealth();
+        }
+
+        Vec3 oldMovement = target.getDeltaMovement();
+        boolean wasHurt = target.hurtOrSimulate(damageSource, totalDamage);
+        if (wasHurt) {
+            player.causeExtraKnockback(
+                    target,
+                    accessor.examplemod$invokeGetKnockback(target, damageSource) + (knockbackAttack ? 0.5F : 0.0F),
+                    oldMovement,
+                    damageSource,
+                    totalDamage,
+                    true
+            );
+            if (sweepAttack) {
+                invoker.examplemod$invokeDoSweepAttack(target, baseDamage, damageSource, attackStrengthScale);
+            }
+
+            invoker.examplemod$invokeAttackVisualEffects(target, criticalAttack, sweepAttack, fullStrengthAttack, false, magicBoost);
+            player.setLastHurtMob(target);
+            invoker.examplemod$invokeItemAttackInteraction(target, offhandStack, damageSource, true);
+            invoker.examplemod$invokeDamageStatsAndHearts(target, oldLivingEntityHealth);
+            player.causeFoodExhaustion(0.1f);
+        } else {
+            invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_NODAMAGE);
+        }
+
+        offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
+        player.postPiercingAttack();
     }
 }
