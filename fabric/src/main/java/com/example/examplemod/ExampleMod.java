@@ -1,18 +1,18 @@
 package com.example.examplemod;
 
+import com.example.examplemod.network.OffhandAttackPacket;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 public class ExampleMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PayloadTypeRegistry.clientboundPlay().register(OffhandAttackPacket.TYPE, OffhandAttackPacket.STREAM_CODEC);
 
-        // This method is invoked by the Fabric mod loader when it is ready
-        // to load your mod. You can access Fabric and Common code in this
-        // project.
-
-        // Use Fabric to bootstrap the Common mod.
-        Constants.LOG.info("Hello Fabric world!");
-        CommonClass.init();
+        ServerPlayNetworking.registerGlobalReceiver(OffhandAttackPacket.TYPE, (payload, context) -> {
+            context.server().execute(() -> OffhandAttack.perform(context.player()));
+        });
     }
 }
