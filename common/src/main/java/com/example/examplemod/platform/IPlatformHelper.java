@@ -1,4 +1,4 @@
-package com.example.examplemod.platform.services;
+package com.example.examplemod.platform;
 
 public interface IPlatformHelper {
 
@@ -33,5 +33,5 @@ public interface IPlatformHelper {
         return isDevelopmentEnvironment() ? "development" : "production";
     }
 
-    void sendOffhandAttackPacket(int entityID, boolean isMiss);
+    void sendOffhandAttackPacket(int entityID, boolean isMiss, int attackStrengthTicker);
 }

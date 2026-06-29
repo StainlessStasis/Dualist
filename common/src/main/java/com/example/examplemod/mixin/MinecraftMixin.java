@@ -1,5 +1,6 @@
 package com.example.examplemod.mixin;
 
+import com.example.examplemod.api.IOffhandEntity;
 import com.example.examplemod.network.OffhandAttackPacket;
 import com.example.examplemod.platform.Services;
 import net.minecraft.client.Minecraft;
@@ -60,8 +61,9 @@ public class MinecraftMixin {
         }
 
         player.swing(InteractionHand.OFF_HAND);
-        player.resetOnlyAttackStrengthTicker();
-        Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss);
+        System.out.println("ATTACK STRENGTH TICKER (Client): "+((LivingEntityAccessor)player).examplemod$getAttackStrengthTicker());
+        Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss, ((LivingEntityAccessor)player).examplemod$getAttackStrengthTicker());
+        ((IOffhandEntity)player).examplemod$resetOffhandAttackStrengthTicker();
         ci.cancel();
     }
 }

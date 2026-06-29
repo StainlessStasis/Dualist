@@ -1,7 +1,6 @@
 package com.example.examplemod.platform;
 
 import com.example.examplemod.ModConstants;
-import com.example.examplemod.platform.services.IPlatformHelper;
 
 import java.util.ServiceLoader;
 

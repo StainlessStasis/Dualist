@@ -1,7 +1,6 @@
 package com.example.examplemod.platform;
 
 import com.example.examplemod.network.OffhandAttackPacket;
-import com.example.examplemod.platform.services.IPlatformHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -23,7 +22,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public void sendOffhandAttackPacket(int entityID, boolean isMiss) {
-        ClientPlayNetworking.send(new OffhandAttackPacket(entityID, isMiss));
+    public void sendOffhandAttackPacket(int entityID, boolean isMiss, int attackStrengthTicker) {
+        ClientPlayNetworking.send(new OffhandAttackPacket(entityID, isMiss, attackStrengthTicker));
     }
 }

@@ -20,7 +20,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.Vec3;
 
 public class OffhandAttack {
-    public static void perform(Player player, int entityID, boolean isMiss) {
+    public static void perform(Player player, int entityID, boolean isMiss, int attackStrengthTicker) {
         if (player.level().isClientSide()) return;
         if (player.isSpectator()) return;
 
@@ -30,6 +30,8 @@ public class OffhandAttack {
         if (player.cannotAttackWithItem(offhand, 0)) return;
 
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
+        offhandEntity.examplemod$setAttackStrengthTicker(attackStrengthTicker);
+        System.out.println("ATTACK STRENGTH TICKER (Server): "+attackStrengthTicker);
 
         if (isMiss) {
             offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
@@ -64,7 +66,7 @@ public class OffhandAttack {
         DamageSource damageSource = invoker.examplemod$invokeCreateAttackSource(offhand);
         float attackStrengthScale = offhandEntity.examplemod$getOffhandAttackStrengthScale(0.5F);
         float magicBoost = attackStrengthScale * (invoker.examplemod$invokeGetEnchantedDamage(target, baseDamage, damageSource) - baseDamage);
-        baseDamage *= invoker.examplemod$invokeBaseDamageScaleFactor();
+        baseDamage *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
         System.out.println("BASE DAMAGE: "+baseDamage);
 
         if (invoker.examplemod$invokeDeflectProjectile(target)) {
@@ -77,7 +79,8 @@ public class OffhandAttack {
             return;
         }
 
-        boolean fullStrengthAttack = attackStrengthScale > 0.9F;
+        System.out.println("MAIN HAND ATTACK SCALE: "+player.getAttackStrengthScale(0.5f));
+        boolean fullStrengthAttack = player.getAttackStrengthScale(0.5f) > 0.9F;
         boolean knockbackAttack;
         if (player.isSprinting() && fullStrengthAttack) {
             invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK);

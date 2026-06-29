@@ -7,11 +7,12 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.InterpolationHandler;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -121,32 +122,38 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         return examplemod$isOffhandAttacking;
     }
 
-    @Override
-    public int examplemod$getOffhandAttackStrengthTicker() {
-        return examplemod$offhandAttackStrengthTicker;
-    }
+//    @Override
+//    public int examplemod$getOffhandAttackStrengthTicker() {
+//        return examplemod$offhandAttackStrengthTicker;
+//    }
+//
+//    @Override
+//    public void examplemod$setOffhandAttackStrengthTicker(int value) {
+//        examplemod$offhandAttackStrengthTicker = value;
+//    }
 
-    @Override
-    public void examplemod$setOffhandAttackStrengthTicker(int value) {
-        examplemod$offhandAttackStrengthTicker = value;
+
+    public void examplemod$setAttackStrengthTicker(int attackStrengthTicker) {
+        this.attackStrengthTicker = attackStrengthTicker;
     }
 
     @Override
     public void examplemod$resetOffhandAttackStrengthTicker() {
         examplemod$offhandAttackStrengthTicker = 0;
+        if (((LivingEntity)(Object)this) instanceof Player player) {
+            player.resetOnlyAttackStrengthTicker();
+        }
     }
 
     @Override
     public float examplemod$getOffhandAttackStrengthScale(float adjustTicks) {
-        LivingEntity self = (LivingEntity) (Object) this;
-        if (!(self instanceof Player player)) {
-            return 1f;
-        }
+        LivingEntity self = (LivingEntity)(Object)this;
+        if (!(self instanceof Player player)) return 1f;
 
         ItemStack offhand = getItemInHand(InteractionHand.OFF_HAND);
         double attackSpeed = OffhandAttributeMath.resolveAttributes(player, Attributes.ATTACK_SPEED, offhand);
-
-        float scale = ((float) examplemod$offhandAttackStrengthTicker + adjustTicks) / (float) (20 / attackSpeed);
-        return Mth.clamp(scale, 0f, 1f);
+        float attackDelay = (float)((double)1.0F / attackSpeed * (double)20.0F);
+        float scale = Mth.clamp((examplemod$offhandAttackStrengthTicker + adjustTicks) / attackDelay, 0.0F, 1.0F);
+        return scale;
     }
 }

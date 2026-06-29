@@ -1,7 +1,6 @@
 package com.example.examplemod.platform;
 
 import com.example.examplemod.network.OffhandAttackPacket;
-import com.example.examplemod.platform.services.IPlatformHelper;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -24,7 +23,7 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public void sendOffhandAttackPacket(int entityID, boolean isMiss) {
-        ClientPacketDistributor.sendToServer(new OffhandAttackPacket(entityID, isMiss));
+    public void sendOffhandAttackPacket(int entityID, boolean isMiss, int attackStrengthTicker) {
+        ClientPacketDistributor.sendToServer(new OffhandAttackPacket(entityID, isMiss, attackStrengthTicker));
     }
 }

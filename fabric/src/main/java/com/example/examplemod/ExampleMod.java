@@ -12,7 +12,7 @@ public class ExampleMod implements ModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(OffhandAttackPacket.TYPE, OffhandAttackPacket.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(OffhandAttackPacket.TYPE, (payload, context) -> {
-            context.server().execute(() -> OffhandAttack.perform(context.player(), payload.entityId(), payload.isMiss()));
+            context.server().execute(() -> OffhandAttack.perform(context.player(), payload.entityId(), payload.isMiss(), payload.attackStrengthTicker()));
         });
     }
 }

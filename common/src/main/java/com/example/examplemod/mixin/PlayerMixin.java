@@ -24,19 +24,4 @@ public class PlayerMixin {
         }
         return player.getItemInHand(hand);
     }
-
-    @Redirect(
-            method = "baseDamageScaleFactor",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/player/Player;getAttackStrengthScale(F)F"
-            )
-    )
-    private float examplemod$redirectBaseDamageScale(Player player, float adjustTicks) {
-        IOffhandEntity offhandEntity = (IOffhandEntity) player;
-        if (offhandEntity.examplemod$isPerformingOffhandAttack()) {
-            return offhandEntity.examplemod$getOffhandAttackStrengthScale(adjustTicks);
-        }
-        return player.getAttackStrengthScale(adjustTicks);
-    }
 }
