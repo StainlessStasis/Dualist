@@ -42,7 +42,7 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
                 examplemod$isOffhandSwinging = true;
 
                 if (self.level() instanceof ServerLevel serverLevel) {
-                    ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, 3);
+                    ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, ClientboundAnimatePacket.SWING_OFF_HAND);
                     ServerChunkCache chunkSource = serverLevel.getChunkSource();
                     if (sendToSwingingEntity) {
                         chunkSource.sendToTrackingPlayersAndSelf(self, packet);
@@ -88,16 +88,10 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
 
     @Inject(
             method = "getWeaponItem",
-            at = @At(
-                    value = "TAIL",
-                    target = "Lnet/minecraft/world/entity/player/Player;getWeaponItem()Lnet/minecraft/world/item/ItemStack;"
-            ),
+            at = @At(value = "RETURN"),
             cancellable = true)
     private void examplemod$getWeaponItem(CallbackInfoReturnable<ItemStack> cir) {
-        System.out.println("GETTING WEAPON ITEM");
-        System.out.println("is offhand attacking: "+examplemod$isOffhandAttacking);
         if (examplemod$isOffhandAttacking) {
-            System.out.println("OFFHAND ITEM: "+getItemInHand(InteractionHand.OFF_HAND));
             cir.setReturnValue(getItemInHand(InteractionHand.OFF_HAND));
         }
     }
@@ -112,5 +106,14 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Override
     public void examplemod$setPerformingOffhandAttack(boolean value) {
         examplemod$isOffhandAttacking = value;
+    }
+
+    public boolean examplemod$isOffhandSwinging() {
+        return examplemod$isOffhandSwinging;
+    }
+
+    @Override
+    public boolean examplemod$isPerformingOffhandAttack() {
+        return examplemod$isOffhandAttacking;
     }
 }

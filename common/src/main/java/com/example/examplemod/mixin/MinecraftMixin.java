@@ -23,6 +23,9 @@ public class MinecraftMixin {
     @Shadow public MultiPlayerGameMode gameMode;
     @Shadow @Final public Options options;
 
+    @Shadow
+    private int rightClickDelay;
+
     @Inject(
             method = "handleKeybinds",
             at = @At(
@@ -33,13 +36,17 @@ public class MinecraftMixin {
             cancellable = true
     )
     private void examplemod$handleOffhandAttack(CallbackInfo ci) {
-        if (player == null || gameMode == null) return;
-        if (gameMode.isSpectator()) return;
+        System.out.println("startUseItem called, rightClickDelay=" + this.rightClickDelay);
+        if (player == null || gameMode == null || gameMode.isSpectator() || player.isHandsBusy()) {
+            return;
+        }
 
         ItemStack offhand = player.getItemInHand(InteractionHand.OFF_HAND);
         if (offhand.isEmpty()) return;
+
         // only intercept if offhand doesnt have a use functionality (e.g. shield)
         if (offhand.getUseAnimation() != ItemUseAnimation.NONE) return;
+
         // only intercept if main hand also doesnt have a use functionality
         ItemStack mainhand = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (!mainhand.isEmpty() && mainhand.getUseAnimation() != ItemUseAnimation.NONE) return;
@@ -51,10 +58,14 @@ public class MinecraftMixin {
             switch (mc.hitResult.getType()) {
                 case ENTITY -> entityID = ((EntityHitResult)mc.hitResult).getEntity().getId();
                 case MISS -> isMiss = true;
-                // BLOCK intentionally ignored
+                case BLOCK -> {
+                    return;
+                }
             }
         }
 
+        System.out.println("Cancelling startUseItem");
+        rightClickDelay = 4;
         player.swing(InteractionHand.OFF_HAND);
         Services.PLATFORM.sendOffhandAttackPacket(entityID, isMiss);
         ci.cancel();
