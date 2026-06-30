@@ -1,7 +1,11 @@
 package com.example.examplemod.mixin;
 
+import com.example.examplemod.OffhandAttributeMath;
 import com.example.examplemod.api.IOffhandEntity;
+import net.minecraft.core.Holder;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,5 +27,27 @@ public class PlayerMixin {
             return player.getItemInHand(InteractionHand.OFF_HAND);
         }
         return player.getItemInHand(hand);
+    }
+
+    @Redirect(
+            method = "getCurrentItemAttackStrengthDelay",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/player/Player;getAttributeValue(Lnet/minecraft/core/Holder;)D"
+            )
+    )
+    private double examplemod$redirectAttackSpeedForDelay(Player player, Holder<Attribute> attribute) {
+        double mainhandSpeed = player.getAttributeValue(attribute);
+        if (attribute.value() != Attributes.ATTACK_SPEED.value()) {
+            return mainhandSpeed;
+        }
+
+        ItemStack offhand = player.getItemInHand(InteractionHand.OFF_HAND);
+        if (offhand.isEmpty()) {
+            return mainhandSpeed;
+        }
+        double offhandSpeed = OffhandAttributeMath.resolveAttributes(player, Attributes.ATTACK_SPEED, offhand);
+
+        return Math.min(mainhandSpeed, offhandSpeed);
     }
 }
