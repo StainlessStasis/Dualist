@@ -1,6 +1,6 @@
 # Dualist
 Vanilla-style dual wielding / attacking with the offhand
-<img width="1802" height="955" alt="image" src="https://github.com/user-attachments/assets/6c1f7456-e744-4c9c-9eff-71e3b659bd9d" />
+<img width="1802" height="955" alt="image" src="https://github.com/user-attachments/assets/463a576f-bb80-430f-af63-5e8a945bba1c" />
 
 # Features
 - Fully vanilla offhand attack, both visually and mechanically
@@ -9,7 +9,7 @@ Vanilla-style dual wielding / attacking with the offhand
 
 # Compatibility:
 Works with shaders, and mods like [First-person Model](https://modrinth.com/mod/first-person-model):
-<img width="1803" height="950" alt="image" src="https://github.com/user-attachments/assets/90a3515a-5835-4aab-a794-adba1e14a522" />
+<img width="1803" height="950" alt="image" src="https://github.com/user-attachments/assets/7986eb18-e017-4e89-b87f-c602c08d1b3c" />
 
 # Other Information
 ### Dependencies:
