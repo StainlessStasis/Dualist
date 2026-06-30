@@ -5,7 +5,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
-public class ExampleMod implements ModInitializer {
+public class Dualist implements ModInitializer {
 
     @Override
     public void onInitialize() {
