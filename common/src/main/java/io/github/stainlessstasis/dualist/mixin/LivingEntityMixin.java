@@ -11,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.Weapon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -103,6 +104,16 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         if (dualist$isOffhandAttacking) {
             cir.setReturnValue(getItemInHand(InteractionHand.OFF_HAND));
         }
+    }
+
+    @Inject(method = "getSecondsToDisableBlocking", at = @At("HEAD"), cancellable = true)
+    private void dualist$getSecondsToDisableBlocking(CallbackInfoReturnable<Float> cir) {
+        if (!dualist$isOffhandAttacking) return;
+
+        ItemStack weaponItem = getItemInHand(InteractionHand.OFF_HAND);
+        Weapon weapon = weaponItem.get(net.minecraft.core.component.DataComponents.WEAPON);
+        float result = weapon != null ? weapon.disableBlockingForSeconds() : 0;
+        cir.setReturnValue(result);
     }
 
     @Override
