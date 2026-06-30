@@ -1,9 +1,9 @@
-package com.example.examplemod;
+package io.github.stainlessstasis.dualist;
 
-import com.example.examplemod.api.IOffhandEntity;
-import com.example.examplemod.mixin.LivingEntityAccessor;
-import com.example.examplemod.mixin.PlayerInvoker;
-import com.example.examplemod.network.OffhandAttackPacket;
+import io.github.stainlessstasis.dualist.api.IOffhandEntity;
+import io.github.stainlessstasis.dualist.mixin.LivingEntityAccessor;
+import io.github.stainlessstasis.dualist.mixin.PlayerInvoker;
+import io.github.stainlessstasis.dualist.network.OffhandAttackPacket;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -30,10 +30,10 @@ public class OffhandAttack {
         if (player.cannotAttackWithItem(offhand, 0)) return;
 
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
-        offhandEntity.examplemod$setAttackStrengthTicker(attackStrengthTicker);
+        offhandEntity.dualist$setAttackStrengthTicker(attackStrengthTicker);
 
         if (isMiss) {
-            offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
+            offhandEntity.dualist$resetOffhandAttackStrengthTicker();
             return;
         }
 
@@ -41,18 +41,18 @@ public class OffhandAttack {
         Entity target = player.level().getEntity(entityID);
         if (target == null) return;
 
-        offhandEntity.examplemod$setPerformingOffhandAttack(true);
+        offhandEntity.dualist$setPerformingOffhandAttack(true);
         try {
             attackWithOffhand(player, target, offhandEntity, offhand);
         } finally {
-            offhandEntity.examplemod$setPerformingOffhandAttack(false);
+            offhandEntity.dualist$setPerformingOffhandAttack(false);
         }
     }
 
     private static void attackWithOffhand(Player player, Entity target, IOffhandEntity offhandEntity, ItemStack offhand) {
         PlayerInvoker invoker = (PlayerInvoker) player;
         LivingEntityAccessor accessor = (LivingEntityAccessor) player;
-        if (invoker.examplemod$invokeCannotAttack(target)) {
+        if (invoker.dualist$invokeCannotAttack(target)) {
             return;
         }
 
@@ -61,12 +61,12 @@ public class OffhandAttack {
                 ? (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE)
                 : (float) OffhandAttributeMath.resolveAttributes(player, Attributes.ATTACK_DAMAGE, offhand);
 
-        DamageSource damageSource = invoker.examplemod$invokeCreateAttackSource(offhand);
-        float attackStrengthScale = offhandEntity.examplemod$getOffhandAttackStrengthScale(0.5F);
-        float magicBoost = attackStrengthScale * (invoker.examplemod$invokeGetEnchantedDamage(target, baseDamage, damageSource) - baseDamage);
+        DamageSource damageSource = invoker.dualist$invokeCreateAttackSource(offhand);
+        float attackStrengthScale = offhandEntity.dualist$getOffhandAttackStrengthScale(0.5F);
+        float magicBoost = attackStrengthScale * (invoker.dualist$invokeGetEnchantedDamage(target, baseDamage, damageSource) - baseDamage);
         baseDamage *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
 
-        if (invoker.examplemod$invokeDeflectProjectile(target)) {
+        if (invoker.dualist$invokeDeflectProjectile(target)) {
             player.onAttack();
             return;
         }
@@ -79,20 +79,20 @@ public class OffhandAttack {
         boolean fullStrengthAttack = player.getAttackStrengthScale(0.5f) > 0.9F;
         boolean knockbackAttack;
         if (player.isSprinting() && fullStrengthAttack) {
-            invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK);
+            invoker.dualist$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK);
             knockbackAttack = true;
         } else {
             knockbackAttack = false;
         }
 
         baseDamage += offhand.getItem().getAttackDamageBonus(target, baseDamage, damageSource);
-        boolean criticalAttack = fullStrengthAttack && invoker.examplemod$invokeCanCriticalAttack(target);
+        boolean criticalAttack = fullStrengthAttack && invoker.dualist$invokeCanCriticalAttack(target);
         if (criticalAttack) {
             baseDamage *= 1.5F;
         }
 
         float totalDamage = baseDamage + magicBoost;
-        boolean sweepAttack = invoker.examplemod$invokeIsSweepAttack(fullStrengthAttack, criticalAttack, knockbackAttack);
+        boolean sweepAttack = invoker.dualist$invokeIsSweepAttack(fullStrengthAttack, criticalAttack, knockbackAttack);
 
         float oldLivingEntityHealth = 0.0F;
         if (target instanceof LivingEntity livingTarget) {
@@ -104,23 +104,23 @@ public class OffhandAttack {
         if (wasHurt) {
             player.causeExtraKnockback(
                     target,
-                    accessor.examplemod$invokeGetKnockback(target, damageSource) + (knockbackAttack ? 0.5F : 0.0F),
+                    accessor.dualist$invokeGetKnockback(target, damageSource) + (knockbackAttack ? 0.5F : 0.0F),
                     oldMovement
             );
             if (sweepAttack) {
                 doOffhandSweepAttack(player, target, baseDamage, damageSource, attackStrengthScale, offhand);
             }
 
-            invoker.examplemod$invokeAttackVisualEffects(target, criticalAttack, sweepAttack, fullStrengthAttack, false, magicBoost);
+            invoker.dualist$invokeAttackVisualEffects(target, criticalAttack, sweepAttack, fullStrengthAttack, false, magicBoost);
             player.setLastHurtMob(target);
-            invoker.examplemod$invokeItemAttackInteraction(target, offhand, damageSource, true);
-            invoker.examplemod$invokeDamageStatsAndHearts(target, oldLivingEntityHealth);
+            invoker.dualist$invokeItemAttackInteraction(target, offhand, damageSource, true);
+            invoker.dualist$invokeDamageStatsAndHearts(target, oldLivingEntityHealth);
             player.causeFoodExhaustion(0.1f);
         } else {
-            invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_NODAMAGE);
+            invoker.dualist$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_NODAMAGE);
         }
 
-        offhandEntity.examplemod$resetOffhandAttackStrengthTicker();
+        offhandEntity.dualist$resetOffhandAttackStrengthTicker();
         player.postPiercingAttack();
         player.onAttack();
     }
@@ -129,7 +129,7 @@ public class OffhandAttack {
             Player player, Entity target, float baseDamage, DamageSource damageSource, float attackStrengthScale, ItemStack offhand
     ) {
         PlayerInvoker invoker = (PlayerInvoker) player;
-        invoker.examplemod$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_SWEEP);
+        invoker.dualist$invokePlayServerSideSound(SoundEvents.PLAYER_ATTACK_SWEEP);
 
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
@@ -143,7 +143,7 @@ public class OffhandAttack {
             if (nearby instanceof ArmorStand stand && stand.isMarker()) continue;
             if (player.distanceToSqr(nearby) >= 9) continue;
 
-            float enchantedSweep = invoker.examplemod$invokeGetEnchantedDamage(
+            float enchantedSweep = invoker.dualist$invokeGetEnchantedDamage(
                     nearby, sweepDamage, damageSource) * attackStrengthScale;
 
             if (nearby.hurtServer(serverLevel, damageSource, enchantedSweep)) {
