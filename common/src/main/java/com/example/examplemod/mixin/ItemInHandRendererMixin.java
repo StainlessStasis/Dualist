@@ -1,6 +1,6 @@
 package com.example.examplemod.mixin;
 
-import com.example.examplemod.api.IHandRenderSelection;
+import com.example.examplemod.ModConstants;
 import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -11,9 +11,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,6 +19,8 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.lang.reflect.Method;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
@@ -65,8 +65,23 @@ public abstract class ItemInHandRendererMixin {
         poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(frameInterp) - xBob) * 0.1F));
         poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(frameInterp) - yBob) * 0.1F));
 
-        var handRenderSelection = (IHandRenderSelection)HandRenderSelectionAccessor.examplemod$invokeEvaluateWhichHandsToRender(player);
-        if (handRenderSelection.examplemod$renderMainHand()) {
+        boolean renderMainHand;
+        boolean renderOffHand;
+        try {
+            Method m = ItemInHandRenderer.class.getDeclaredMethod(
+                    "evaluateWhichHandsToRender", LocalPlayer.class
+            );
+            m.setAccessible(true);
+            Object hrs = m.invoke(null, player);
+            Class<?> hrsClass = hrs.getClass();
+            renderMainHand = hrsClass.getDeclaredField("renderMainHand").getBoolean(hrs);
+            renderOffHand = hrsClass.getDeclaredField("renderOffHand").getBoolean(hrs);
+        } catch (Exception e) {
+            renderMainHand = true;
+            renderOffHand = false;
+            ModConstants.LOG.error("Failed to evaluate which hands to render: {}. Defaulting to render main hand and not render offhand.", e.getLocalizedMessage());
+        }
+        if (renderMainHand) {
             float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oMainHandHeight, this.mainHandHeight));
             examplemod$invokeSubmitArmWithItem(
@@ -77,7 +92,7 @@ public abstract class ItemInHandRendererMixin {
             );
         }
 
-        if (handRenderSelection.examplemod$renderOffHand()) {
+        if (renderOffHand) {
             float offhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.offHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oOffHandHeight, this.offHandHeight));
 
