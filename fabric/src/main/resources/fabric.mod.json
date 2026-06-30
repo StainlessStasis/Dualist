@@ -16,7 +16,7 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-          "io.github.stainlessstasis.dualist.ExampleMod"
+            "io.github.stainlessstasis.dualist.Dualist"
         ]
     },
     "mixins": [

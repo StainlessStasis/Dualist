@@ -1,6 +1,6 @@
 package io.github.stainlessstasis.dualist.platform;
 
-import io.github.stainlessstasis.dualist.ModConstants;
+import io.github.stainlessstasis.dualist.DualistConstants;
 
 import java.util.ServiceLoader;
 
@@ -23,7 +23,7 @@ public class Services {
         final T loadedService = ServiceLoader.load(clazz, Services.class.getClassLoader())
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("Failed to load service for " + clazz.getName()));
-        ModConstants.LOG.debug("Loaded {} for service {}", loadedService, clazz);
+        DualistConstants.LOG.debug("Loaded {} for service {}", loadedService, clazz);
         return loadedService;
     }
 }

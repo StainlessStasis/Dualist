@@ -8,10 +8,10 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@Mod(ModConstants.MOD_ID)
+@Mod(DualistConstants.MOD_ID)
 @EventBusSubscriber
-public class ExampleMod {
-    public ExampleMod(IEventBus eventBus) {}
+public class DualistMod {
+    public DualistMod(IEventBus eventBus) {}
 
     @SubscribeEvent
     public static void registerPackets(final RegisterPayloadHandlersEvent event) {
