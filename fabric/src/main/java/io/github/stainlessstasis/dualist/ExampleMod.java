@@ -1,0 +1,18 @@
+package io.github.stainlessstasis.dualist;
+
+import io.github.stainlessstasis.dualist.network.OffhandAttackPacket;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
+public class ExampleMod implements ModInitializer {
+
+    @Override
+    public void onInitialize() {
+        PayloadTypeRegistry.serverboundPlay().register(OffhandAttackPacket.TYPE, OffhandAttackPacket.STREAM_CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(OffhandAttackPacket.TYPE, (payload, context) -> {
+            context.server().execute(() -> OffhandAttack.perform(context.player(), payload.entityId(), payload.isMiss(), payload.attackStrengthTicker()));
+        });
+    }
+}

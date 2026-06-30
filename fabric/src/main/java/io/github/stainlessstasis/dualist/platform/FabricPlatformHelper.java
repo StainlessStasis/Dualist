@@ -1,0 +1,28 @@
+package io.github.stainlessstasis.dualist.platform;
+
+import io.github.stainlessstasis.dualist.network.OffhandAttackPacket;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
+
+public class FabricPlatformHelper implements IPlatformHelper {
+
+    @Override
+    public String getPlatformName() {
+        return "Fabric";
+    }
+
+    @Override
+    public boolean isModLoaded(String modId) {
+        return FabricLoader.getInstance().isModLoaded(modId);
+    }
+
+    @Override
+    public boolean isDevelopmentEnvironment() {
+        return FabricLoader.getInstance().isDevelopmentEnvironment();
+    }
+
+    @Override
+    public void sendOffhandAttackPacket(int entityID, boolean isMiss, int attackStrengthTicker) {
+        ClientPlayNetworking.send(new OffhandAttackPacket(entityID, isMiss, attackStrengthTicker));
+    }
+}
