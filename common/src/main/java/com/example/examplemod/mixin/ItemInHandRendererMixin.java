@@ -1,5 +1,6 @@
 package com.example.examplemod.mixin;
 
+import com.example.examplemod.api.IHandRenderSelection;
 import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -58,41 +59,14 @@ public abstract class ItemInHandRendererMixin {
             offHandAttack = 0;
         }
 
-        boolean renderMainHand;
-        boolean renderOffHand;
-
-        ItemStack liveMain = player.getMainHandItem();
-        ItemStack liveOffhand = player.getOffhandItem();
-        boolean holdsBow = liveMain.is(Items.BOW) || liveOffhand.is(Items.BOW);
-        boolean holdsCrossbow = liveMain.is(Items.CROSSBOW) || liveOffhand.is(Items.CROSSBOW);
-
-        if (!holdsBow && !holdsCrossbow) {
-            renderMainHand = true;
-            renderOffHand  = true;
-        } else if (player.isUsingItem()) {
-            ItemStack usedItem = player.getUseItem();
-            InteractionHand usedHand = player.getUsedItemHand();
-            if (!usedItem.is(Items.BOW) && !usedItem.is(Items.CROSSBOW)) {
-                boolean offhandCharged = liveOffhand.is(Items.CROSSBOW) && CrossbowItem.isCharged(liveOffhand);
-                renderMainHand = true;
-                renderOffHand = !(usedHand == InteractionHand.MAIN_HAND && offhandCharged);
-            } else {
-                renderMainHand = usedHand == InteractionHand.MAIN_HAND;
-                renderOffHand = usedHand == InteractionHand.OFF_HAND;
-            }
-        } else {
-            boolean mainCharged = liveMain.is(Items.CROSSBOW) && CrossbowItem.isCharged(liveMain);
-            renderMainHand = true;
-            renderOffHand = !mainCharged;
-        }
-
         float xRot = player.getXRot(frameInterp);
         float xBob = Mth.lerp(frameInterp, player.xBobO, player.xBob);
         float yBob = Mth.lerp(frameInterp, player.yBobO, player.yBob);
         poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(frameInterp) - xBob) * 0.1F));
         poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(frameInterp) - yBob) * 0.1F));
 
-        if (renderMainHand) {
+        var handRenderSelection = (IHandRenderSelection)HandRenderSelectionAccessor.examplemod$invokeEvaluateWhichHandsToRender(player);
+        if (handRenderSelection.examplemod$renderMainHand()) {
             float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oMainHandHeight, this.mainHandHeight));
             examplemod$invokeSubmitArmWithItem(
@@ -103,7 +77,7 @@ public abstract class ItemInHandRendererMixin {
             );
         }
 
-        if (renderOffHand) {
+        if (handRenderSelection.examplemod$renderOffHand()) {
             float offhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.offHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oOffHandHeight, this.offHandHeight));
 

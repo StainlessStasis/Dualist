@@ -4,6 +4,7 @@
   "package": "com.example.examplemod.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "HandRenderSelectionAccessor",
     "LivingEntityAccessor",
     "LivingEntityMixin",
     "PlayerInvoker",
