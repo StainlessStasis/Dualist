@@ -1,9 +1,9 @@
-package com.example.examplemod.mixin;
+package io.github.stainlessstasis.dualist.mixin;
 
-import com.example.examplemod.ModConstants;
-import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.github.stainlessstasis.dualist.ModConstants;
+import io.github.stainlessstasis.dualist.api.IOffhandEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
@@ -56,7 +56,7 @@ public abstract class ItemInHandRendererMixin {
         float mainHandAttack = (player.swinging && player.swingingArm == InteractionHand.MAIN_HAND)
                 ? player.getAttackAnim(partialTick) : 0.0F;
 
-        float offHandAttack = offhandEntity.examplemod$getOffhandAttackAnim(partialTick);
+        float offHandAttack = offhandEntity.dualist$getOffhandAttackAnim(partialTick);
         if (offHandAttack <= 0) {
             offHandAttack = 0;
         }
@@ -99,7 +99,7 @@ public abstract class ItemInHandRendererMixin {
         if (renderOffHand) {
             float vanillaOffhandContribution = this.itemModelResolver.swapAnimationScale(this.offHandItem)
                     * (1.0F - Mth.lerp(partialTick, this.oOffHandHeight, this.offHandHeight));
-            float offhandEquipDip = 1 - offhandEntity.examplemod$getOffhandHeight(partialTick);
+            float offhandEquipDip = 1 - offhandEntity.dualist$getOffhandHeight(partialTick);
             float offhandInverseArmHeight = Math.max(vanillaOffhandContribution, offhandEquipDip);
 
             InteractionHand originalSwingingArm = player.swingingArm;
