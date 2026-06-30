@@ -9,7 +9,7 @@ public class ExampleMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.clientboundPlay().register(OffhandAttackPacket.TYPE, OffhandAttackPacket.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(OffhandAttackPacket.TYPE, OffhandAttackPacket.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(OffhandAttackPacket.TYPE, (payload, context) -> {
             context.server().execute(() -> OffhandAttack.perform(context.player(), payload.entityId(), payload.isMiss(), payload.attackStrengthTicker()));
