@@ -31,6 +31,8 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Unique private int examplemod$offhandSwingTime = 0;
     @Unique private float examplemod$offhandAttackAnim = 0;
     @Unique private float examplemod$offhandAttackAnimOld = 0;
+    @Unique private float examplemod$offhandHeight;
+    @Unique private float examplemod$offhandHeightOld;
     @Unique private boolean examplemod$isOffhandAttacking = false;
     @Unique private int examplemod$offhandAttackStrengthTicker = Integer.MAX_VALUE;
 
@@ -65,6 +67,11 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Inject(method = "baseTick", at = @At("HEAD"))
     public void examplemod$baseTick(CallbackInfo ci) {
         examplemod$offhandAttackAnimOld = examplemod$offhandAttackAnim;
+        examplemod$offhandHeightOld = examplemod$offhandHeight;
+
+        float scale = examplemod$getOffhandAttackStrengthScale(0f);
+        float targetHeight = scale * scale * scale;
+        examplemod$offhandHeight += Mth.clamp(targetHeight - examplemod$offhandHeight, -0.4f, 0.4f);
     }
 
     @Inject(method = "baseTick", at = @At("TAIL"))
@@ -144,5 +151,10 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
         float attackDelay = (float)((double)1.0F / attackSpeed * (double)20.0F);
         float scale = Mth.clamp((examplemod$offhandAttackStrengthTicker + adjustTicks) / attackDelay, 0.0F, 1.0F);
         return scale;
+    }
+
+    @Override
+    public float examplemod$getOffhandHeight(float partialTick) {
+        return Mth.lerp(partialTick, examplemod$offhandHeightOld, examplemod$offhandHeight);
     }
 }

@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -46,24 +47,24 @@ public abstract class ItemInHandRendererMixin {
             cancellable = true
     )
     private void examplemod$submitHands(
-            float frameInterp, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
+            float partialTick, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
             LocalPlayer player, int lightCoords, CallbackInfo ci
     ) {
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
 
         float mainHandAttack = (player.swinging && player.swingingArm == InteractionHand.MAIN_HAND)
-                ? player.getAttackAnim(frameInterp) : 0.0F;
+                ? player.getAttackAnim(partialTick) : 0.0F;
 
-        float offHandAttack = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
+        float offHandAttack = offhandEntity.examplemod$getOffhandAttackAnim(partialTick);
         if (offHandAttack <= 0) {
             offHandAttack = 0;
         }
 
-        float xRot = player.getXRot(frameInterp);
-        float xBob = Mth.lerp(frameInterp, player.xBobO, player.xBob);
-        float yBob = Mth.lerp(frameInterp, player.yBobO, player.yBob);
-        poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(frameInterp) - xBob) * 0.1F));
-        poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(frameInterp) - yBob) * 0.1F));
+        float xRot = player.getXRot(partialTick);
+        float xBob = Mth.lerp(partialTick, player.xBobO, player.xBob);
+        float yBob = Mth.lerp(partialTick, player.yBobO, player.yBob);
+        poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(partialTick) - xBob) * 0.1F));
+        poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTick) - yBob) * 0.1F));
 
         boolean renderMainHand;
         boolean renderOffHand;
@@ -81,11 +82,13 @@ public abstract class ItemInHandRendererMixin {
             renderOffHand = false;
             ModConstants.LOG.error("Failed to evaluate which hands to render: {}. Defaulting to render main hand and not render offhand.", e.getLocalizedMessage());
         }
+
         if (renderMainHand) {
             float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
-                    * (1.0F - Mth.lerp(frameInterp, this.oMainHandHeight, this.mainHandHeight));
+                    * (1.0F - Mth.lerp(partialTick, this.oMainHandHeight, this.mainHandHeight));
+
             examplemod$invokeSubmitArmWithItem(
-                    player, frameInterp, xRot,
+                    player, partialTick, xRot,
                     InteractionHand.MAIN_HAND, mainHandAttack,
                     this.mainHandItem, mainhandInverseArmHeight,
                     poseStack, submitNodeCollector, lightCoords
@@ -93,8 +96,10 @@ public abstract class ItemInHandRendererMixin {
         }
 
         if (renderOffHand) {
-            float offhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.offHandItem)
-                    * (1.0F - Mth.lerp(frameInterp, this.oOffHandHeight, this.offHandHeight));
+            float vanillaOffhandContribution = this.itemModelResolver.swapAnimationScale(this.offHandItem)
+                    * (1.0F - Mth.lerp(partialTick, this.oOffHandHeight, this.offHandHeight));
+            float offhandEquipDip = 1 - offhandEntity.examplemod$getOffhandHeight(partialTick);
+            float offhandInverseArmHeight = Math.max(vanillaOffhandContribution, offhandEquipDip);
 
             InteractionHand originalSwingingArm = player.swingingArm;
             boolean originalSwinging = player.swinging;
@@ -106,7 +111,7 @@ public abstract class ItemInHandRendererMixin {
 
             try {
                 examplemod$invokeSubmitArmWithItem(
-                        player, frameInterp, xRot,
+                        player, partialTick, xRot,
                         InteractionHand.OFF_HAND, offHandAttack,
                         this.offHandItem, offhandInverseArmHeight,
                         poseStack, submitNodeCollector, lightCoords

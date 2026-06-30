@@ -12,5 +12,7 @@ public interface IOffhandEntity {
     void examplemod$setAttackStrengthTicker(int value);
     void examplemod$resetOffhandAttackStrengthTicker();
     float examplemod$getOffhandAttackStrengthScale(float adjustTicks);
+
+    float examplemod$getOffhandHeight(float partialTick);
 }
 
