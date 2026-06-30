@@ -1,126 +1,100 @@
 package io.github.stainlessstasis.dualist.mixin;
 
-import io.github.stainlessstasis.dualist.ModConstants;
 import io.github.stainlessstasis.dualist.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.gen.Invoker;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.lang.reflect.Method;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
-    @Shadow private ItemStack mainHandItem;
-    @Shadow private ItemStack offHandItem;
-    @Shadow private float mainHandHeight;
-    @Shadow private float oMainHandHeight;
-    @Shadow private float offHandHeight;
-    @Shadow private float oOffHandHeight;
-    @Final @Shadow private ItemModelResolver itemModelResolver;
+    @Unique private float dualist$mainHandAttackOverride;
+    @Unique private float dualist$offHandAttackOverride;
+    @Unique private float dualist$offhandInverseArmHeightOverride;
+    @Unique private boolean dualist$frameComputed = false;
 
-    @Invoker("renderArmWithItem")
-    abstract void dualist$invokeSubmitArmWithItem(
-            AbstractClientPlayer player, float frameInterp, float xRot,
-            InteractionHand hand, float attack, ItemStack itemStack,
-            float inverseArmHeight, PoseStack poseStack,
-            SubmitNodeCollector submitNodeCollector, int lightCoords
-    );
-
-    @Inject(
-            method = "renderHandsWithItems",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void dualist$submitHands(
+    @Inject(method = "renderHandsWithItems", at = @At("HEAD"))
+    private void dualist$computeOverrides(
             float partialTick, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
             LocalPlayer player, int lightCoords, CallbackInfo ci
     ) {
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
 
-        float mainHandAttack = (player.swinging && player.swingingArm == InteractionHand.MAIN_HAND)
+        dualist$mainHandAttackOverride = (player.swinging && player.swingingArm == InteractionHand.MAIN_HAND)
                 ? player.getAttackAnim(partialTick) : 0.0F;
 
         float offHandAttack = offhandEntity.dualist$getOffhandAttackAnim(partialTick);
-        if (offHandAttack <= 0) {
-            offHandAttack = 0;
+        dualist$offHandAttackOverride = Math.max(offHandAttack, 0.0F);
+        dualist$offhandInverseArmHeightOverride = 1 - offhandEntity.dualist$getOffhandHeight(partialTick);
+
+        dualist$frameComputed = true;
+    }
+
+    @Redirect(
+            method = "renderHandsWithItems",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
+                    ordinal = 0
+            )
+    )
+    private void dualist$redirectMainHandRender(
+            ItemInHandRenderer self, AbstractClientPlayer player, float frameInterp, float xRot,
+            InteractionHand hand, float attack, ItemStack itemStack, float inverseArmHeight,
+            PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords
+    ) {
+        float finalAttack = dualist$frameComputed ? dualist$mainHandAttackOverride : attack;
+        ((ItemInHandRendererInvoker) self).dualist$invokeRenderArmWithItem(
+                player, frameInterp, xRot, InteractionHand.MAIN_HAND, finalAttack,
+                itemStack, inverseArmHeight, poseStack, submitNodeCollector, lightCoords
+        );
+    }
+
+    @Redirect(
+            method = "renderHandsWithItems",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
+                    ordinal = 1
+            )
+    )
+    private void dualist$redirectOffHandRender(
+            ItemInHandRenderer self, AbstractClientPlayer player, float frameInterp, float xRot,
+            InteractionHand hand, float attack, ItemStack itemStack, float inverseArmHeight,
+            PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords
+    ) {
+        float finalAttack = dualist$frameComputed ? dualist$offHandAttackOverride : attack;
+        float finalInverseArmHeight = dualist$frameComputed
+                ? Math.max(inverseArmHeight, dualist$offhandInverseArmHeightOverride)
+                : inverseArmHeight;
+
+        InteractionHand originalSwingingArm = player.swingingArm;
+        boolean originalSwinging = player.swinging;
+
+        if (finalAttack > 0) {
+            player.swingingArm = InteractionHand.OFF_HAND;
+            player.swinging = true;
         }
 
-        float xRot = player.getXRot(partialTick);
-        float xBob = Mth.lerp(partialTick, player.xBobO, player.xBob);
-        float yBob = Mth.lerp(partialTick, player.yBobO, player.yBob);
-        poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(partialTick) - xBob) * 0.1F));
-        poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTick) - yBob) * 0.1F));
-
-        boolean renderMainHand;
-        boolean renderOffHand;
         try {
-            Method m = ItemInHandRenderer.class.getDeclaredMethod(
-                    "evaluateWhichHandsToRender", LocalPlayer.class
+            ((ItemInHandRendererInvoker) self).dualist$invokeRenderArmWithItem(
+                    player, frameInterp, xRot, InteractionHand.OFF_HAND, finalAttack,
+                    itemStack, finalInverseArmHeight, poseStack, submitNodeCollector, lightCoords
             );
-            m.setAccessible(true);
-            Object hrs = m.invoke(null, player);
-            Class<?> hrsClass = hrs.getClass();
-            renderMainHand = hrsClass.getDeclaredField("renderMainHand").getBoolean(hrs);
-            renderOffHand = hrsClass.getDeclaredField("renderOffHand").getBoolean(hrs);
-        } catch (Exception e) {
-            renderMainHand = true;
-            renderOffHand = false;
-            ModConstants.LOG.error("Failed to evaluate which hands to render: {}. Defaulting to render main hand and not render offhand.", e.getLocalizedMessage());
+        } finally {
+            player.swingingArm = originalSwingingArm;
+            player.swinging = originalSwinging;
         }
-
-        if (renderMainHand) {
-            float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
-                    * (1.0F - Mth.lerp(partialTick, this.oMainHandHeight, this.mainHandHeight));
-
-            dualist$invokeSubmitArmWithItem(
-                    player, partialTick, xRot,
-                    InteractionHand.MAIN_HAND, mainHandAttack,
-                    this.mainHandItem, mainhandInverseArmHeight,
-                    poseStack, submitNodeCollector, lightCoords
-            );
-        }
-
-        if (renderOffHand) {
-            float vanillaOffhandContribution = this.itemModelResolver.swapAnimationScale(this.offHandItem)
-                    * (1.0F - Mth.lerp(partialTick, this.oOffHandHeight, this.offHandHeight));
-            float offhandEquipDip = 1 - offhandEntity.dualist$getOffhandHeight(partialTick);
-            float offhandInverseArmHeight = Math.max(vanillaOffhandContribution, offhandEquipDip);
-
-            InteractionHand originalSwingingArm = player.swingingArm;
-            boolean originalSwinging = player.swinging;
-
-            if (offHandAttack > 0) {
-                player.swingingArm = InteractionHand.OFF_HAND;
-                player.swinging = true;
-            }
-
-            try {
-                dualist$invokeSubmitArmWithItem(
-                        player, partialTick, xRot,
-                        InteractionHand.OFF_HAND, offHandAttack,
-                        this.offHandItem, offhandInverseArmHeight,
-                        poseStack, submitNodeCollector, lightCoords
-                );
-            } finally {
-                player.swingingArm = originalSwingingArm;
-                player.swinging = originalSwinging;
-            }
-        }
-
-        ci.cancel();
     }
 }
