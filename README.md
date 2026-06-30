@@ -5,7 +5,7 @@ Vanilla-style dual wielding / attacking with the offhand
 # Features
 - Fully vanilla offhand attack, both visually and mechanically
 - Simultaneously attack with main and offhand, or attack with either hand independently
-- Balanced: both hands share an attack cooldown which determines damage, sword sweeping, axe shield disabling, etc. 2x weapons doesn't mean 2x damage
+- Balanced: both hands share the vanilla attack cooldown, which determines damage, sword sweeping, axe shield disabling, etc. Basically, 2x weapons doesn't mean 2x damage
 
 # Compatibility:
 Works with shaders, and mods like [First-person Model](https://modrinth.com/mod/first-person-model):
