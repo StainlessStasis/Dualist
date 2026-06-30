@@ -4,6 +4,7 @@ import com.example.examplemod.ModConstants;
 import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -15,7 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -32,8 +32,9 @@ public abstract class ItemInHandRendererMixin {
     @Shadow private float offHandHeight;
     @Shadow private float oOffHandHeight;
     @Final @Shadow private ItemModelResolver itemModelResolver;
+    @Final @Shadow private Minecraft minecraft;
 
-    @Invoker("submitArmWithItem")
+    @Invoker("renderArmWithItem")
     abstract void examplemod$invokeSubmitArmWithItem(
             AbstractClientPlayer player, float frameInterp, float xRot,
             InteractionHand hand, float attack, ItemStack itemStack,
@@ -42,11 +43,11 @@ public abstract class ItemInHandRendererMixin {
     );
 
     @Inject(
-            method = "submitHandsWithItems",
+            method = "renderHandsWithItems",
             at = @At("HEAD"),
             cancellable = true
     )
-    private void examplemod$submitHands(
+    private void examplemod$renderHands(
             float partialTick, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
             LocalPlayer player, int lightCoords, CallbackInfo ci
     ) {
@@ -121,6 +122,9 @@ public abstract class ItemInHandRendererMixin {
                 player.swinging = originalSwinging;
             }
         }
+
+        this.minecraft.gameRenderer.getFeatureRenderDispatcher().renderAllFeatures();
+        this.minecraft.renderBuffers().bufferSource().endBatch();
 
         ci.cancel();
     }
