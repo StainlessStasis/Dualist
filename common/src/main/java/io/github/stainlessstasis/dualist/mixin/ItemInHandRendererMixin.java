@@ -1,10 +1,9 @@
 package io.github.stainlessstasis.dualist.mixin;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import io.github.stainlessstasis.dualist.ModConstants;
 import io.github.stainlessstasis.dualist.api.IOffhandEntity;
-import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -32,10 +31,9 @@ public abstract class ItemInHandRendererMixin {
     @Shadow private float offHandHeight;
     @Shadow private float oOffHandHeight;
     @Final @Shadow private ItemModelResolver itemModelResolver;
-    @Final @Shadow private Minecraft minecraft;
 
     @Invoker("renderArmWithItem")
-    abstract void examplemod$invokeSubmitArmWithItem(
+    abstract void dualist$invokeSubmitArmWithItem(
             AbstractClientPlayer player, float frameInterp, float xRot,
             InteractionHand hand, float attack, ItemStack itemStack,
             float inverseArmHeight, PoseStack poseStack,
@@ -47,7 +45,7 @@ public abstract class ItemInHandRendererMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void examplemod$renderHands(
+    private void dualist$submitHands(
             float partialTick, PoseStack poseStack, SubmitNodeCollector submitNodeCollector,
             LocalPlayer player, int lightCoords, CallbackInfo ci
     ) {
@@ -88,7 +86,7 @@ public abstract class ItemInHandRendererMixin {
             float mainhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.mainHandItem)
                     * (1.0F - Mth.lerp(partialTick, this.oMainHandHeight, this.mainHandHeight));
 
-            examplemod$invokeSubmitArmWithItem(
+            dualist$invokeSubmitArmWithItem(
                     player, partialTick, xRot,
                     InteractionHand.MAIN_HAND, mainHandAttack,
                     this.mainHandItem, mainhandInverseArmHeight,
@@ -111,7 +109,7 @@ public abstract class ItemInHandRendererMixin {
             }
 
             try {
-                examplemod$invokeSubmitArmWithItem(
+                dualist$invokeSubmitArmWithItem(
                         player, partialTick, xRot,
                         InteractionHand.OFF_HAND, offHandAttack,
                         this.offHandItem, offhandInverseArmHeight,
@@ -122,9 +120,6 @@ public abstract class ItemInHandRendererMixin {
                 player.swinging = originalSwinging;
             }
         }
-
-        this.minecraft.gameRenderer.getFeatureRenderDispatcher().renderAllFeatures();
-        this.minecraft.renderBuffers().bufferSource().endBatch();
 
         ci.cancel();
     }
