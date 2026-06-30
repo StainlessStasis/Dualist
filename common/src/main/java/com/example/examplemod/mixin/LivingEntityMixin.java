@@ -44,24 +44,21 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
                 || examplemod$offhandSwingTime >= getCurrentSwingDuration() / 2
                 || examplemod$offhandSwingTime < 0;
 
-
-        if (self.level() instanceof ServerLevel level && canSwing) {
-            ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, ClientboundAnimatePacket.SWING_OFF_HAND);
-            ServerChunkCache chunkSource = level.getChunkSource();
-            if (sendToSwingingEntity) {
-                chunkSource.sendToTrackingPlayersAndSelf(self, packet);
-            } else {
-                chunkSource.sendToTrackingPlayers(self, packet);
-            }
-            ci.cancel();
-            return;
-        }
-
         if (canSwing) {
             examplemod$offhandSwingTime = -1;
             examplemod$isOffhandSwinging = true;
-//            System.out.println("CLIENT offhand swing started, isClientSide=" + self.level().isClientSide());
+
+            if (self.level() instanceof ServerLevel level && canSwing) {
+                ClientboundAnimatePacket packet = new ClientboundAnimatePacket(self, ClientboundAnimatePacket.SWING_OFF_HAND);
+                ServerChunkCache chunkSource = level.getChunkSource();
+                if (sendToSwingingEntity) {
+                    chunkSource.sendToTrackingPlayersAndSelf(self, packet);
+                } else {
+                    chunkSource.sendToTrackingPlayers(self, packet);
+                }
+            }
         }
+
         ci.cancel();
     }
 
@@ -80,27 +77,20 @@ public abstract class LivingEntityMixin implements IOffhandEntity {
     @Inject(method = "updateSwingTime", at = @At("TAIL"))
     protected void examplemod$updateSwingTime(CallbackInfo ci) {
         int duration = getCurrentSwingDuration();
-        LivingEntity self = ((LivingEntity) (Object) this);
-//        System.out.printf("mainSwing=%b mainTime=%d offSwing=%b offTime=%d duration=%d isClient=%b%n",
-//                self.swinging,
-//                self.swingTime,
-//                examplemod$isOffhandSwinging,
-//                examplemod$offhandSwingTime,
-//                duration,
-//                self.level().isClientSide()
-//        );
 
         if (examplemod$isOffhandSwinging) {
             examplemod$offhandSwingTime++;
+
+            examplemod$offhandAttackAnim = (float) examplemod$offhandSwingTime / (float) duration;
+
             if (examplemod$offhandSwingTime >= duration) {
                 examplemod$offhandSwingTime = 0;
                 examplemod$isOffhandSwinging = false;
             }
         } else {
             examplemod$offhandSwingTime = 0;
+            examplemod$offhandAttackAnim = 0;
         }
-
-        examplemod$offhandAttackAnim = (float) examplemod$offhandSwingTime / (float) duration;
     }
 
     @Inject(method = "getWeaponItem", at = @At("RETURN"), cancellable = true)

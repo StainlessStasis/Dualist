@@ -31,12 +31,12 @@ public abstract class HumanoidModelMixin {
     public void examplemod$applyOffhandAttackAnim(HumanoidRenderState state, CallbackInfo ci) {
         if (!(state instanceof IOffhandRenderState offhandState)) return;
 
-        if (!offhandState.examplemod$isOffhandSwinging()) {
+        float offAttackTime = offhandState.examplemod$getOffhandAttackAnim();
+        if (offAttackTime <= 0) {
             return;
         }
 
         float mainAttackTime = state.attackTime;
-        float offAttackTime = offhandState.examplemod$getOffhandAttackAnim();
         float ageScale = state.ageScale;
 
         float mainRot = 0;
