@@ -3,7 +3,6 @@ package com.example.examplemod.mixin;
 import com.example.examplemod.api.IOffhandEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -51,22 +50,12 @@ public abstract class ItemInHandRendererMixin {
     ) {
         IOffhandEntity offhandEntity = (IOffhandEntity) player;
 
-        float mainHandAttack;
-        float offHandAttack;
+        float mainHandAttack = (player.swinging && player.swingingArm == InteractionHand.MAIN_HAND)
+                ? player.getAttackAnim(frameInterp) : 0.0F;
 
-        boolean mainHandSwinging = player.swingingArm == InteractionHand.MAIN_HAND && player.swinging;
-        boolean offHandSwinging  = offhandEntity.examplemod$isOffhandSwinging();
-
-        if (mainHandSwinging && offHandSwinging) {
-            mainHandAttack = player.getAttackAnim(frameInterp);
-            offHandAttack  = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
-        } else if (offHandSwinging) {
-            mainHandAttack = 0f;
-            offHandAttack  = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
-        } else {
-            mainHandAttack = (player.swingingArm == InteractionHand.MAIN_HAND || !player.swinging)
-                    ? player.getAttackAnim(frameInterp) : 0f;
-            offHandAttack = 0f;
+        float offHandAttack = offhandEntity.examplemod$getOffhandAttackAnim(frameInterp);
+        if (offHandAttack <= 0) {
+            offHandAttack = 0;
         }
 
         boolean renderMainHand;
@@ -117,12 +106,26 @@ public abstract class ItemInHandRendererMixin {
         if (renderOffHand) {
             float offhandInverseArmHeight = this.itemModelResolver.swapAnimationScale(this.offHandItem)
                     * (1.0F - Mth.lerp(frameInterp, this.oOffHandHeight, this.offHandHeight));
-            examplemod$invokeSubmitArmWithItem(
-                    player, frameInterp, xRot,
-                    InteractionHand.OFF_HAND, offHandAttack,
-                    this.offHandItem, offhandInverseArmHeight,
-                    poseStack, submitNodeCollector, lightCoords
-            );
+
+            InteractionHand originalSwingingArm = player.swingingArm;
+            boolean originalSwinging = player.swinging;
+
+            if (offHandAttack > 0) {
+                player.swingingArm = InteractionHand.OFF_HAND;
+                player.swinging = true;
+            }
+
+            try {
+                examplemod$invokeSubmitArmWithItem(
+                        player, frameInterp, xRot,
+                        InteractionHand.OFF_HAND, offHandAttack,
+                        this.offHandItem, offhandInverseArmHeight,
+                        poseStack, submitNodeCollector, lightCoords
+                );
+            } finally {
+                player.swingingArm = originalSwingingArm;
+                player.swinging = originalSwinging;
+            }
         }
 
         ci.cancel();
