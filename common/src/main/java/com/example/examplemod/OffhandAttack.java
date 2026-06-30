@@ -105,10 +105,7 @@ public class OffhandAttack {
             player.causeExtraKnockback(
                     target,
                     accessor.examplemod$invokeGetKnockback(target, damageSource) + (knockbackAttack ? 0.5F : 0.0F),
-                    oldMovement,
-                    damageSource,
-                    totalDamage,
-                    true
+                    oldMovement
             );
             if (sweepAttack) {
                 doOffhandSweepAttack(player, target, baseDamage, damageSource, attackStrengthScale, offhand);
@@ -153,9 +150,7 @@ public class OffhandAttack {
                 nearby.knockback(
                         0.4F,
                         Mth.sin(player.getYRot() * (float)(Math.PI / 180.0)),
-                        -Mth.cos(player.getYRot() * (float)(Math.PI / 180.0)),
-                        damageSource,
-                        enchantedSweep
+                        -Mth.cos(player.getYRot() * (float)(Math.PI / 180.0))
                 );
                 EnchantmentHelper.doPostAttackEffects(serverLevel, nearby, damageSource);
             }
